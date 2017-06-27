@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 
 namespace QuickRedisClient.Internal {
@@ -56,9 +55,8 @@ namespace QuickRedisClient.Internal {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void LogSendContents(byte[] buf, int start, int len) {
 			if (EnableContentsDebugLog) {
-				var sendStr = JsonConvert.SerializeObject(
-					ObjectCache.AsciiEncoding.GetString(buf, start, len));
-				Console.WriteLine($"redis client send: {sendStr}");
+				var str = ObjectConverter.BytesToDebugString(buf, start, len);
+				Console.WriteLine($"redis client send: {str}");
 			}
 		}
 #endif
@@ -71,9 +69,8 @@ namespace QuickRedisClient.Internal {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void LogRecvContents(byte[] buf, int start, int len) {
 			if (EnableContentsDebugLog) {
-				var recvStr = JsonConvert.SerializeObject(
-					ObjectCache.AsciiEncoding.GetString(buf, start, len));
-				Console.WriteLine($"redis client recv: {recvStr}");
+				var str = ObjectConverter.BytesToDebugString(buf, start, len);
+				Console.WriteLine($"redis client recv: {str}");
 			}
 		}
 #endif

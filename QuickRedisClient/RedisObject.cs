@@ -38,7 +38,7 @@ namespace QuickRedisClient {
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static implicit operator RedisObject(long integer) {
-			return new RedisObject(IsInteger, 0);
+			return new RedisObject(IsInteger, integer);
 		}
 
 		/// <summary>
@@ -46,6 +46,17 @@ namespace QuickRedisClient {
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static implicit operator RedisObject(double value) {
+			if (value % 1 == 0 && value >= long.MinValue && value <= long.MaxValue) {
+				return (long)value;
+			}
+			return value.ToString();
+		}
+
+		/// <summary>
+		/// Convert decimal to redis object
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static implicit operator RedisObject(decimal value) {
 			if (value % 1 == 0 && value >= long.MinValue && value <= long.MaxValue) {
 				return (long)value;
 			}
@@ -102,6 +113,19 @@ namespace QuickRedisClient {
 		}
 
 		/// <summary>
+		/// Convert redis object to decimal
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static explicit operator decimal(RedisObject obj) {
+			if (obj._bytes == IsInteger) {
+				return obj._integer;
+			} else if (obj._bytes == null) {
+				return 0;
+			}
+			return decimal.Parse((string)obj);
+		}
+
+		/// <summary>
 		/// Convert redis object to string
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -130,7 +154,23 @@ namespace QuickRedisClient {
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool operator ==(RedisObject lhs, RedisObject rhs) {
-			return lhs._bytes == rhs._bytes && lhs._integer == rhs._integer;
+			if ((lhs._bytes == IsInteger) != (rhs._bytes == IsInteger)) {
+				return false; // one is integer, other is not
+			} else if (lhs._bytes == IsInteger) {
+				return lhs._integer == rhs._integer; // both is integer
+			} else if ((lhs._bytes == null) != (rhs._bytes == null)) {
+				return false; // one is null, other is not
+			} else if (lhs._bytes == null) {
+				return true; // both is null
+			} else if (lhs._bytes.Length != rhs._bytes.Length) {
+				return false; // length is different
+			}
+			for (int from = 0, to = lhs._bytes.Length; from < to; ++from) {
+				if (lhs._bytes[from] != rhs._bytes[from]) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		/// <summary>
@@ -138,7 +178,7 @@ namespace QuickRedisClient {
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool operator !=(RedisObject lhs, RedisObject rhs) {
-			return lhs._bytes != rhs._bytes || lhs._integer != rhs._integer;
+			return !(lhs == rhs);
 		}
 
 		/// <summary>
@@ -161,6 +201,19 @@ namespace QuickRedisClient {
 				return false;
 			}
 			return this == (RedisObject)obj;
+		}
+
+		/// <summary>
+		/// Return the string representation of this object
+		/// </summary>
+		/// <returns></returns>
+		public override string ToString() {
+			if (_bytes == IsInteger) {
+				return _integer.ToString();
+			} else if (_bytes == null) {
+				return "(nil)";
+			}
+			return ObjectConverter.BytesToDebugString(_bytes, 0, _bytes.Length);
 		}
 	}
 }

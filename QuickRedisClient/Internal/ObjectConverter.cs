@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace QuickRedisClient.Internal {
@@ -50,6 +52,19 @@ namespace QuickRedisClient.Internal {
 				result = -result;
 			}
 			return result;
+		}
+
+		/// <summary>
+		/// Convert bytes to string only for debug
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static string BytesToDebugString(byte[] bytes, int start, int len) {
+			try {
+				return JsonConvert.SerializeObject(
+					ObjectCache.UTF8Encoding.GetString(bytes, start, len));
+			} catch {
+				return "[" + string.Join(", ", bytes.Skip(start).Take(len)) + "]";
+			}
 		}
 	}
 }
