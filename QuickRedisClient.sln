@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickRedisClient", "QuickRedisClient\QuickRedisClient.csproj", "{C317EA18-767F-40E6-8D39-69D37D92E7E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickRedisClient.Benchmark", "QuickRedisClient.Benchmark\QuickRedisClient.Benchmark.csproj", "{56BC65D2-A48C-4D0F-8E2D-01771A8174D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickRedisClient.Tests", "QuickRedisClient.Tests\QuickRedisClient.Tests.csproj", "{9DB0B41C-111A-4710-BA91-0EF82FE4D750}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C317EA18-767F-40E6-8D39-69D37D92E7E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C317EA18-767F-40E6-8D39-69D37D92E7E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C317EA18-767F-40E6-8D39-69D37D92E7E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C317EA18-767F-40E6-8D39-69D37D92E7E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56BC65D2-A48C-4D0F-8E2D-01771A8174D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56BC65D2-A48C-4D0F-8E2D-01771A8174D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56BC65D2-A48C-4D0F-8E2D-01771A8174D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56BC65D2-A48C-4D0F-8E2D-01771A8174D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DB0B41C-111A-4710-BA91-0EF82FE4D750}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DB0B41C-111A-4710-BA91-0EF82FE4D750}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DB0B41C-111A-4710-BA91-0EF82FE4D750}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DB0B41C-111A-4710-BA91-0EF82FE4D750}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
