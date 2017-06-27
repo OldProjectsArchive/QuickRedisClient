@@ -78,7 +78,7 @@ namespace QuickRedisClient {
 			} else if (obj._bytes == null) {
 				return 0;
 			}
-			return ObjectConverter.StringToInteger(obj._bytes, 0, obj._bytes.Length);
+			return ObjectConverter.StringBytesToLong(obj._bytes, 0, obj._bytes.Length);
 		}
 
 		/// <summary>
@@ -144,7 +144,7 @@ namespace QuickRedisClient {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static explicit operator byte[] (RedisObject obj) {
 			if (obj._bytes == IsInteger) {
-				return ObjectConverter.IntegerToString(obj._integer);
+				return ObjectConverter.LongToStringBytes(obj._integer);
 			}
 			return obj._bytes;
 		}

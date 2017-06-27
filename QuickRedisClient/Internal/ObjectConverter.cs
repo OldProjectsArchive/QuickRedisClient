@@ -9,10 +9,10 @@ namespace QuickRedisClient.Internal {
 	/// </summary>
 	internal class ObjectConverter {
 		/// <summary>
-		/// Convert int to string, eg: 123 => '123'
+		/// Convert long to byte[], eg: 123 => '123'
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static byte[] IntegerToString(long value) {
+		public static byte[] LongToStringBytes(long value) {
 			if (value >= 0) {
 				if (value < ObjectCache.SmallIntUpper) {
 					return ObjectCache.PositiveIntToString[value];
@@ -27,10 +27,10 @@ namespace QuickRedisClient.Internal {
 		}
 
 		/// <summary>
-		/// Convert string to int, eg: '-123' => -123
+		/// Convert byte[] to long, eg: '-123' => -123
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static long StringToInteger(byte[] bytes, int start, int len) {
+		public static long StringBytesToLong(byte[] bytes, int start, int len) {
 			if (len == 0) {
 				return 0;
 			}

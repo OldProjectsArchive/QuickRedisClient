@@ -8,6 +8,13 @@ namespace QuickRedisClient.Internal {
 	/// </summary>
 	internal static class BlockingBufferWriter {
 		/// <summary>
+		/// Maximum length of bulk string prefix and suffix
+		/// $ max-int \r\n raw-str \r\n
+		/// </summary>
+		public readonly static int MaxBulkStringAdditionalLength =
+			int.MaxValue.ToString().Length + 5;
+
+		/// <summary>
 		/// Writer raw string to buffer, without header
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,7 +29,7 @@ namespace QuickRedisClient.Internal {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void WriteBulkString(byte[] buf, ref int start, byte[] str) {
 			buf[start++] = (byte)'$';
-			WriteRawInt(buf, ref start, str.Length);
+			WriteRawLong(buf, ref start, str.Length);
 			buf[start++] = (byte)'\r';
 			buf[start++] = (byte)'\n';
 			WriteRawString(buf, ref start, str);
@@ -36,17 +43,17 @@ namespace QuickRedisClient.Internal {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void WriteBulkStringHeaderOnly(byte[] buf, ref int start, byte[] str) {
 			buf[start++] = (byte)'$';
-			WriteRawInt(buf, ref start, str.Length);
+			WriteRawLong(buf, ref start, str.Length);
 			buf[start++] = (byte)'\r';
 			buf[start++] = (byte)'\n';
 		}
 
 		/// <summary>
-		/// Write raw int to buffer
+		/// Write raw long to buffer
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void WriteRawInt(byte[] buf, ref int start, int value) {
-			var bytes = ObjectConverter.IntegerToString(value);
+		public static void WriteRawLong(byte[] buf, ref int start, long value) {
+			var bytes = ObjectConverter.LongToStringBytes(value);
 			Buffer.BlockCopy(bytes, 0, buf, start, bytes.Length);
 			start += bytes.Length;
 		}

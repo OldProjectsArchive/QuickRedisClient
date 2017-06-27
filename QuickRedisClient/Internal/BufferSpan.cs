@@ -46,12 +46,8 @@ namespace QuickRedisClient.Internal {
 		/// </summary>
 		/// <returns></returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int ToInt() {
-			int result = 0;
-			for (int from = _start, to = _start + _len; from < to; ++from) {
-				result = result * 10 + (_buffer[from] - '0');
-			}
-			return result;
+		public long ToLong() {
+			return ObjectConverter.StringBytesToLong(_buffer, _start, _len);
 		}
 	}
 }

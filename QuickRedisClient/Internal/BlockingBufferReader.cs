@@ -110,7 +110,8 @@ namespace QuickRedisClient.Internal {
 		/// Read fixed length contens from buffer
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static BufferSpan ReadUntilLength(Socket client, byte[] buf, ref int start, ref int end, int length) {
+		public static BufferSpan ReadUntilLength(
+			Socket client, byte[] buf, ref int start, ref int end, int length) {
 			// fast path
 			var lengthIncludeCRLF = length + 2;
 			if (end - start > lengthIncludeCRLF) {
@@ -153,7 +154,7 @@ namespace QuickRedisClient.Internal {
 		/// For
 		/// - simple string, return byte[]
 		/// - error, return Exception
-		/// - integer, return int
+		/// - integer, return long
 		/// - bulk string, return byte[]
 		/// - array, return object[]
 		/// </summary>
@@ -173,18 +174,18 @@ namespace QuickRedisClient.Internal {
 				var errorStr = ObjectCache.UTF8Encoding.GetString(error);
 				result = new RedisClientException($"Redis server error: {errorStr}");
 			} else if (type == ':') {
-				// integer, return int
-				result = ReadUntilCRLF(client, buf, ref start, ref end).ToInt();
+				// integer, return long
+				result = ReadUntilCRLF(client, buf, ref start, ref end).ToLong();
 			} else if (type == '$') {
 				// bulk string, return byte[]
-				var length = ReadUntilCRLF(client, buf, ref start, ref end).ToInt();
+				var length = ReadUntilCRLF(client, buf, ref start, ref end).ToLong();
 				if (length > MaxAllowedBulkStringLength) {
 					throw new RedisClientException($"Redis client error: bulk string too long, length is '{length}'");
 				}
-				result = ReadUntilLength(client, buf, ref start, ref end, length).ToBytes();
+				result = ReadUntilLength(client, buf, ref start, ref end, (int)length).ToBytes();
 			} else if (type == '*') {
 				// array, return object[]
-				var size = ReadUntilCRLF(client, buf, ref start, ref end).ToInt();
+				var size = ReadUntilCRLF(client, buf, ref start, ref end).ToLong();
 				if (size > MaxAllowedArraySize) {
 					throw new RedisClientException($"Redis client error: array too long, size is '{size}'");
 				}
