@@ -5,7 +5,7 @@ namespace QuickRedisClient.Internal {
 	/// <summary>
 	/// Hold a buffer and it's slice
 	/// </summary>
-	public struct BufferSpan {
+	internal struct BufferSpan {
 		private byte[] _buffer;
 		private bool _bufferMayReuse;
 		private int _start;
