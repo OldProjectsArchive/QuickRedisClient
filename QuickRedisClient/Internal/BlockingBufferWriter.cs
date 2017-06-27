@@ -6,7 +6,7 @@ namespace QuickRedisClient.Internal {
 	/// <summary>
 	/// Blocking buffer writer
 	/// </summary>
-	internal class BlockingBufferWriter {
+	internal static class BlockingBufferWriter {
 		/// <summary>
 		/// Writer raw string to buffer, without header
 		/// </summary>
@@ -46,12 +46,7 @@ namespace QuickRedisClient.Internal {
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void WriteRawInt(byte[] buf, ref int start, int value) {
-			byte[] bytes;
-			if (value >= 0 && value < CommonObjectCache.SmallIntCache.Length) {
-				bytes = CommonObjectCache.SmallIntCache[value];
-			} else {
-				bytes = CommonObjectCache.AsciiEncoding.GetBytes(value.ToString());
-			}
+			var bytes = ObjectConverter.IntegerToString(value);
 			Buffer.BlockCopy(bytes, 0, buf, start, bytes.Length);
 			start += bytes.Length;
 		}

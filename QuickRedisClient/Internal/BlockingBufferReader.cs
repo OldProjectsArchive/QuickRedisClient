@@ -6,7 +6,7 @@ namespace QuickRedisClient.Internal {
 	/// <summary>
 	/// Blocking buffer reader
 	/// </summary>
-	internal class BlockingBufferReader {
+	internal static class BlockingBufferReader {
 		/// <summary>
 		/// For security check
 		/// </summary>
@@ -170,7 +170,7 @@ namespace QuickRedisClient.Internal {
 			} else if (type == '-') {
 				// error, return Exception
 				var error = ReadUntilCRLF(client, buf, ref start, ref end).ToBytes();
-				var errorStr = CommonObjectCache.UTF8Encoding.GetString(error);
+				var errorStr = ObjectCache.UTF8Encoding.GetString(error);
 				result = new RedisClientException($"Redis server error: {errorStr}");
 			} else if (type == ':') {
 				// integer, return int

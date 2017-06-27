@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace QuickRedisClient.Thread {
@@ -6,35 +7,35 @@ namespace QuickRedisClient.Thread {
 	/// Redis client based on thread without pipeline support
 	/// </summary>
 	internal class ThreadRedisClient : IRedisClient {
-		public void Set(byte[] key, byte[] value) {
+		public void Set(RedisObject key, RedisObject value) {
 			throw new NotImplementedException();
 		}
 
-		public Task SetAsync(byte[] key, byte[] value) {
+		public Task SetAsync(RedisObject key, RedisObject value) {
 			throw new NotImplementedException();
 		}
 
-		public byte[] Get(byte[] key) {
+		public RedisObject Get(RedisObject key) {
 			throw new NotImplementedException();
 		}
 
-		public Task<byte[]> GetAsync(byte[] key) {
+		public Task<RedisObject> GetAsync(RedisObject key) {
 			throw new NotImplementedException();
 		}
 
-		public void Del(byte[] key) {
+		public bool Del(RedisObject key) {
 			throw new NotImplementedException();
 		}
 
-		public Task DelAsync(byte[] key) {
+		public Task<bool> DelAsync(RedisObject key) {
 			throw new NotImplementedException();
 		}
 
-		public void Del(byte[][] keys) {
+		public long DelMany(IEnumerable<RedisObject> key) {
 			throw new NotImplementedException();
 		}
 
-		public Task DelAsync(byte[][] keys) {
+		public Task<long> DelManyAsync(IEnumerable<RedisObject> key) {
 			throw new NotImplementedException();
 		}
 

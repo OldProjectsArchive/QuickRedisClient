@@ -57,7 +57,7 @@ namespace QuickRedisClient.Internal {
 		public static void LogSendContents(byte[] buf, int start, int len) {
 			if (EnableContentsDebugLog) {
 				var sendStr = JsonConvert.SerializeObject(
-					CommonObjectCache.AsciiEncoding.GetString(buf, start, len));
+					ObjectCache.AsciiEncoding.GetString(buf, start, len));
 				Console.WriteLine($"redis client send: {sendStr}");
 			}
 		}
@@ -72,7 +72,7 @@ namespace QuickRedisClient.Internal {
 		public static void LogRecvContents(byte[] buf, int start, int len) {
 			if (EnableContentsDebugLog) {
 				var recvStr = JsonConvert.SerializeObject(
-					CommonObjectCache.AsciiEncoding.GetString(buf, start, len));
+					ObjectCache.AsciiEncoding.GetString(buf, start, len));
 				Console.WriteLine($"redis client recv: {recvStr}");
 			}
 		}

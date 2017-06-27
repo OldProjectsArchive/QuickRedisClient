@@ -5,7 +5,7 @@ namespace QuickRedisClient.Internal {
 	/// <summary>
 	/// Object cache of common objects
 	/// </summary>
-	internal static class CommonObjectCache {
+	internal static class ObjectCache {
 		/// <summary>
 		/// Ascii encoding
 		/// </summary>
@@ -27,9 +27,20 @@ namespace QuickRedisClient.Internal {
 		/// </summary>
 		public readonly static byte[] Empty = new byte[0];
 		/// <summary>
-		/// Small int cache
+		/// Cache small int from 0 to 65535 (include 65535)
 		/// </summary>
-		public readonly static byte[][] SmallIntCache = Enumerable.Range(0, 1000)
+		public const int SmallIntUpper = 0x10000;
+		/// <summary>
+		/// Positive small int => string cache
+		/// </summary>
+		public readonly static byte[][] PositiveIntToString = Enumerable
+			.Range(0, SmallIntUpper)
 			.Select(x => AsciiEncoding.GetBytes(x.ToString())).ToArray();
+		/// <summary>
+		/// Negative small int => string cache
+		/// </summary>
+		public readonly static byte[][] NegativeIntToString = Enumerable
+			.Range(0, SmallIntUpper)
+			.Select(x => AsciiEncoding.GetBytes((-x).ToString())).ToArray();
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace QuickRedisClient {
@@ -9,37 +10,37 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Set key to hold the string value
 		/// </summary>
-		void Set(byte[] key, byte[] value);
+		void Set(RedisObject key, RedisObject value);
 		/// <summary>
 		/// Set key to hold the string value
 		/// </summary>
-		Task SetAsync(byte[] key, byte[] value);
+		Task SetAsync(RedisObject key, RedisObject value);
 
 		/// <summary>
 		/// Get the value of key
 		/// </summary>
-		byte[] Get(byte[] key);
+		RedisObject Get(RedisObject key);
 		/// <summary>
 		/// Get the value of key
 		/// </summary>
-		Task<byte[]> GetAsync(byte[] key);
+		Task<RedisObject> GetAsync(RedisObject key);
 
 		/// <summary>
 		/// Removes the specified key
 		/// </summary>
-		void Del(byte[] key);
+		bool Del(RedisObject key);
 		/// <summary>
 		/// Removes the specified key
 		/// </summary>
-		Task DelAsync(byte[] key);
+		Task<bool> DelAsync(RedisObject key);
 
 		/// <summary>
 		/// Removes the specified keys
 		/// </summary>
-		void Del(byte[][] keys);
+		long DelMany(IEnumerable<RedisObject> key);
 		/// <summary>
 		/// Removes the specified keys
 		/// </summary>
-		Task DelAsync(byte[][] keys);
+		Task<long> DelManyAsync(IEnumerable<RedisObject> key);
 	}
 }

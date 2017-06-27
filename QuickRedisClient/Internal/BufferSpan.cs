@@ -29,9 +29,9 @@ namespace QuickRedisClient.Internal {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte[] ToBytes() {
 			if (_len == 0) {
-				return CommonObjectCache.Empty;
+				return ObjectCache.Empty;
 			} else if (_len == 2 && _buffer[_start] == 'O' && _buffer[_start + 1] == 'K') {
-				return CommonObjectCache.OK;
+				return ObjectCache.OK;
 			} else if (!_bufferMayReuse && _start == 0 && _len == _buffer.Length) {
 				return _buffer;
 			}
