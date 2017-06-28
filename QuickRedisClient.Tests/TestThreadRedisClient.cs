@@ -8,7 +8,10 @@ namespace QuickRedisClient.Tests {
 
 		public TestThreadRedisClient() {
 			_factory = new ThreadRedisClientFactory();
-			_client = _factory.Create(new RedisClientConfiguration());
+			_client = _factory.Create(new RedisClientConfiguration() {
+				MinConnection = 1,
+				MaxConnection = 3
+			});
 		}
 	}
 }

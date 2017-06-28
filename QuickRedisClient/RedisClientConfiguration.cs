@@ -42,7 +42,7 @@ namespace QuickRedisClient {
 		/// </summary>
 		public RedisClientConfiguration(string serverAddress) {
 			MinConnection = 10;
-			MaxConnection = 30;
+			MaxConnection = 100;
 			ServerAddresses = new[] { serverAddress };
 			SendBufferCapacity = 1024;
 			RecvBufferCapacity = 1024;

@@ -12,7 +12,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Convert long to byte[], eg: 123 => '123'
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static byte[] LongToStringBytes(long value) {
 			if (value >= 0) {
 				if (value < ObjectCache.SmallIntUpper) {
@@ -30,7 +30,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Convert byte[] to long, eg: '-123' => -123
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static long StringBytesToLong(byte[] bytes, int start, int len) {
 			if (len == 0) {
 				return 0;
@@ -60,7 +60,7 @@ namespace QuickRedisClient.Internal {
 		/// </summary>
 		/// <param name="address"></param>
 		/// <returns></returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static EndPoint StringToEndPoint(string address) {
 			var index = address.LastIndexOf(':');
 			var ip = IPAddress.Parse(address.Substring(0, index));
@@ -71,7 +71,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Convert bytes to string only for debug
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static string BytesToDebugString(byte[] bytes, int start, int len) {
 			try {
 				return JsonConvert.SerializeObject(

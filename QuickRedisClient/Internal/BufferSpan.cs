@@ -14,7 +14,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Initialize
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public BufferSpan(byte[] array, bool bufferMayReuse, int start, int len) {
 			_buffer = array;
 			_bufferMayReuse = bufferMayReuse;
@@ -26,7 +26,7 @@ namespace QuickRedisClient.Internal {
 		/// Get bytes from this span
 		/// </summary>
 		/// <returns></returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public byte[] ToBytes() {
 			if (_len == 0) {
 				return ObjectCache.Empty;
@@ -45,7 +45,7 @@ namespace QuickRedisClient.Internal {
 		/// Notice: it won't check the buffer is valid not-overflowed int or not
 		/// </summary>
 		/// <returns></returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public long ToLong() {
 			return ObjectConverter.StringBytesToLong(_buffer, _start, _len);
 		}

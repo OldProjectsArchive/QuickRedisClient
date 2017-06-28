@@ -16,137 +16,142 @@ namespace QuickRedisClient.Thread {
 	/// </summary>
 	internal class ThreadRedisClient : IRedisClient {
 		private RedisClientConfiguration _configuration;
-		private HashSet<ThreadRedisClientConnection> _connections;
-		private ThreadRedisClientConnection _freeConnections;
-		private object _connectionsLock;
+		private ThreadRedisClientConnection _connections;
+		private int _connectionsFreeCount;
+		private int _connectionsTotalCount;
 		private int _minConnections;
 		private int _maxConnections;
 		private int _lastConnectionId;
-		private int _lastUsedConnectionIndex;
 		private List<EndPoint> _remoteEPs;
 		private int _lastUsedRemoteEPIndex;
 
 		public ThreadRedisClient(RedisClientConfiguration configuration) {
 			_configuration = configuration;
-			_connections = new HashSet<ThreadRedisClientConnection>();
-			_connectionsLock = new object();
+			_connections = null;
+			_connectionsFreeCount = 0;
+			_connectionsTotalCount = 0;
 			_minConnections = Math.Max(configuration.MinConnection, 1);
 			_maxConnections = Math.Max(configuration.MaxConnection, configuration.MinConnection);
 			_lastConnectionId = 0;
-			_lastUsedConnectionIndex = 0;
 			_remoteEPs = configuration.ServerAddresses
 				.Select(a => ObjectConverter.StringToEndPoint(a)).ToList();
 			_lastUsedRemoteEPIndex = 0;
-			SpawnMinConnections();
+			SpawnMinConnections_LockFree();
 		}
 
 		public void Dispose() {
-			lock (_connectionsLock) {
-				foreach (var connection in _connections) {
-					connection.Dispose();
+			var connection = _connections;
+			_connections = null;
+			while (connection != null) {
+				connection.Dispose();
+				connection = connection._next;
+			}
+			_connectionsFreeCount = 0;
+			_connectionsTotalCount = 0;
+		}
+
+		[MethodImpl(InlineOptimization.InlineOption)]
+		internal EndPoint NextEndPoint() {
+			var remoteEPIndex = Interlocked.Increment(ref _lastUsedRemoteEPIndex);
+			remoteEPIndex = (int)((remoteEPIndex & uint.MaxValue) % _remoteEPs.Count);
+			return _remoteEPs[remoteEPIndex];
+		}
+
+		[MethodImpl(InlineOptimization.InlineOption)]
+		private void PushFreeConnection_LockFree(ThreadRedisClientConnection connection) {
+			do {
+				var head = _connections;
+				connection._next = head;
+				if (Interlocked.CompareExchange(ref _connections, connection, head) == head) {
+					var count = Interlocked.Increment(ref _connectionsFreeCount);
+					DebugLogger.Log("push free connections: {0}", count);
+					return;
 				}
-				_connections.Clear();
-				_freeConnections = null;
-			}
+			} while (true);
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private void PushFreeConnection_NonThreadSafe(ThreadRedisClientConnection connection) {
-			connection._nextFree = _freeConnections;
-			_freeConnections = connection;
-			if (connection._nextFree == null) {
-				// notify other thread there new free connection
-				Monitor.Pulse(_connectionsLock);
-			}
+		[MethodImpl(InlineOptimization.InlineOption)]
+		private ThreadRedisClientConnection PopFreeConnection_LockFree() {
+			do {
+				var head = _connections;
+				var next = head?._next;
+				if (Interlocked.CompareExchange(ref _connections, next, head) == head) {
+					if (head != null) {
+						// head._next will update at next push
+						var count = Interlocked.Decrement(ref _connectionsFreeCount);
+						DebugLogger.Log("pop free connections: {0}", count);
+					}
+					return head;
+				}
+			} while (true);
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private ThreadRedisClientConnection PopFreeConnection_NonThreadSafe() {
-			var connection = _freeConnections;
-			_freeConnections = connection?._nextFree;
-			return connection;
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private ThreadRedisClientConnection SpawnOneConnection_NonThreadSafe(bool pushFree) {
-			if (_connections.Count >= _maxConnections) {
+		[MethodImpl(InlineOptimization.InlineOption)]
+		private ThreadRedisClientConnection SpawnOneConnection_LockFree(bool pushFree) {
+			if (_connectionsTotalCount >= _maxConnections) {
 				return null;
 			}
 			var connectionId = Interlocked.Increment(ref _lastConnectionId);
-			var remoteEPIndex = Interlocked.Increment(
-				ref _lastUsedRemoteEPIndex) % _remoteEPs.Count;
-			var connection = new ThreadRedisClientConnection(
-				this, connectionId, _remoteEPs[remoteEPIndex], _configuration);
-			_connections.Add(connection);
+			var connection = new ThreadRedisClientConnection(this, connectionId, _configuration);
+			var count = Interlocked.Increment(ref _connectionsTotalCount);
+			if (count > _maxConnections) {
+				connection?.Dispose();
+				Interlocked.Decrement(ref _connectionsTotalCount);
+				return null;
+			}
 			if (pushFree) {
-				PushFreeConnection_NonThreadSafe(connection);
+				PushFreeConnection_LockFree(connection);
 			}
 			return connection;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private void SpawnMinConnections() {
-			lock (_connectionsLock) {
-				for (int from = _connections.Count, to = _minConnections; from < to; ++from) {
-					SpawnOneConnection_NonThreadSafe(pushFree: true);
-				}
+		[MethodImpl(InlineOptimization.InlineOption)]
+		private void SpawnMinConnections_LockFree() {
+			for (int from = _connectionsTotalCount, to = _minConnections; from < to; ++from) {
+				SpawnOneConnection_LockFree(pushFree: true);
 			}
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private void RemoveOneConnection_NonThreadSafe(ThreadRedisClientConnection connection) {
-			_connections.Remove(connection);
-			if (connection == _freeConnections) {
-				_freeConnections = connection._nextFree;
-			} else {
-				var free = _freeConnections;
-				while (free != null) {
-					if (free._nextFree == connection) {
-						free._nextFree = connection._nextFree;
-						break;
-					}
-					free = free._nextFree;
-				}
+		[MethodImpl(InlineOptimization.InlineOption)]
+		private ThreadRedisClientConnection RemoveOneConnection_LockFree() {
+			var connection = PopFreeConnection_LockFree();
+			if (connection != null) {
+				Interlocked.Decrement(ref _connectionsTotalCount);
 			}
-			DebugLogger.Log("conection {0} removed", connection.ConnectionId);
+			return connection;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		internal ThreadRedisClientConnection AcquireConnection() {
-			lock (_connectionsLock) {
-				while (true) {
-					// grab free connection
-					var connection = PopFreeConnection_NonThreadSafe();
-					if (connection != null) {
-						return connection;
-					}
-					// no free connection, try create one
-					connection = SpawnOneConnection_NonThreadSafe(pushFree: false);
-					if (connection != null) {
-						return connection;
-					}
-					// failed, just wait for new free connection
-					Monitor.Wait(_connectionsLock);
+			while (true) {
+				// grab free connection
+				var connection = PopFreeConnection_LockFree();
+				if (connection != null) {
+					return connection;
 				}
+				// no free connection, try create one
+				connection = SpawnOneConnection_LockFree(pushFree: false);
+				if (connection != null) {
+					return connection;
+				}
+				// failed, wait a moment
+				// i'm not using Monitor here because it's very slow, even slow than sleep
+				System.Threading.Thread.Sleep(1);
 			}
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		internal void ReleaseConnection(ThreadRedisClientConnection connection) {
-			lock (_connectionsLock) {
-				// add connection to free list
-				PushFreeConnection_NonThreadSafe(connection);
-			}
+			PushFreeConnection_LockFree(connection);
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		private void ReleaseErrorConnection(
 			ThreadRedisClientConnection connection, Exception ex) {
-			lock (_connectionsLock) {
-				DebugLogger.Log("redis connection {0} error: {1}",
-					connection.ConnectionId, ex.ToString());
-				RemoveOneConnection_NonThreadSafe(connection);
-			}
+			DebugLogger.Log("redis connection {0} error: {1}",
+				connection.ConnectionId, ex.ToString());
+			connection.Dispose();
+			PushFreeConnection_LockFree(connection);
 		}
 
 		public void Set(RedisObject key, RedisObject value) {

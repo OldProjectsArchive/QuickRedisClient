@@ -12,7 +12,7 @@ namespace QuickRedisClient.Thread.Messages {
 		private readonly static byte[] MessageHeader =
 			ObjectCache.AsciiEncoding.GetBytes("*3\r\n$3\r\nSET\r\n");
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static void Send(Socket client, byte[] sendbuf, byte[] key, byte[] value) {
 			int len = 0;
 			BlockingBufferWriter.WriteRawString(sendbuf, ref len, MessageHeader);
@@ -35,7 +35,7 @@ namespace QuickRedisClient.Thread.Messages {
 			}
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static void Recv(Socket client, byte[] recvbuf, ref int start, ref int end) {
 			var result = BlockingBufferReader.ReadRESP(client, recvbuf, ref start, ref end);
 			if (result == ObjectCache.OK) {

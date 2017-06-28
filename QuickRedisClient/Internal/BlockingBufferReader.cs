@@ -19,7 +19,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Receive contents to buffer only if there not exist contents
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static void FillRecvBuf(Socket client, byte[] buf, ref int start, ref int end) {
 			if (start == end) {
 				start = end = 0;
@@ -35,7 +35,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Find first index of '\r\n' in buffer, return -1 if not found
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static int IndexOfCRLF(byte[] buf, int start, int end) {
 			for (int from = start, to = end - 1; from < to; ++from) {
 				if (buf[from] == '\r' && buf[from + 1] == '\n') {
@@ -48,7 +48,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Read contents from buffer until '\r\n' occurs
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static BufferSpan ReadUntilCRLF(Socket client, byte[] buf, ref int start, ref int end) {
 			// fast path
 			var index = IndexOfCRLF(buf, start, end);
@@ -109,7 +109,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Read fixed length contens from buffer
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static BufferSpan ReadUntilLength(
 			Socket client, byte[] buf, ref int start, ref int end, int length) {
 			// fast path
@@ -158,7 +158,7 @@ namespace QuickRedisClient.Internal {
 		/// - bulk string, return byte[]
 		/// - array, return object[]
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static object ReadRESP(Socket client, byte[] buf, ref int start, ref int end) {
 			// if there nothing in the buffer, read something first
 			FillRecvBuf(client, buf, ref start, ref end);

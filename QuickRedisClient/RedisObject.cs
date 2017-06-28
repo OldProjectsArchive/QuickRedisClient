@@ -11,7 +11,7 @@ namespace QuickRedisClient {
 		byte[] _bytes;
 		long _integer;
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		private RedisObject(byte[] bytes, long integer) {
 			_bytes = bytes;
 			_integer = integer;
@@ -20,7 +20,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert string to redis object
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static implicit operator RedisObject(string str) {
 			return new RedisObject(ObjectCache.UTF8Encoding.GetBytes(str), 0);
 		}
@@ -28,7 +28,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert byte[] to redis object
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static implicit operator RedisObject(byte[] bytes) {
 			return new RedisObject(bytes, 0);
 		}
@@ -36,7 +36,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert long to redis object
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static implicit operator RedisObject(long integer) {
 			return new RedisObject(IsInteger, integer);
 		}
@@ -44,7 +44,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert double to redis object
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static implicit operator RedisObject(double value) {
 			if (value % 1 == 0 && value >= long.MinValue && value <= long.MaxValue) {
 				return (long)value;
@@ -55,7 +55,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert decimal to redis object
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static implicit operator RedisObject(decimal value) {
 			if (value % 1 == 0 && value >= long.MinValue && value <= long.MaxValue) {
 				return (long)value;
@@ -71,7 +71,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to long
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator long(RedisObject obj) {
 			if (obj._bytes == IsInteger) {
 				return obj._integer;
@@ -84,7 +84,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to int
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator int(RedisObject obj) {
 			var value = (long)obj;
 			return checked((int)value);
@@ -93,7 +93,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to double
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator double(RedisObject obj) {
 			if (obj._bytes == IsInteger) {
 				return obj._integer;
@@ -106,7 +106,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to float
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator float(RedisObject obj) {
 			var value = (double)obj;
 			return checked((float)value);
@@ -115,7 +115,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to decimal
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator decimal(RedisObject obj) {
 			if (obj._bytes == IsInteger) {
 				return obj._integer;
@@ -128,7 +128,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to string
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator string(RedisObject obj) {
 			if (obj._bytes == null) {
 				return null;
@@ -141,7 +141,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Convert redis object to byte[]
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static explicit operator byte[] (RedisObject obj) {
 			if (obj._bytes == IsInteger) {
 				return ObjectConverter.LongToStringBytes(obj._integer);
@@ -152,7 +152,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Determine if two redis object are equivalent
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static bool operator ==(RedisObject lhs, RedisObject rhs) {
 			if ((lhs._bytes == IsInteger) != (rhs._bytes == IsInteger)) {
 				return false; // one is integer, other is not
@@ -176,7 +176,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Determine if two redis object are not equivalent
 		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		[MethodImpl(InlineOptimization.InlineOption)]
 		public static bool operator !=(RedisObject lhs, RedisObject rhs) {
 			return !(lhs == rhs);
 		}
