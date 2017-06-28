@@ -12,10 +12,12 @@ namespace QuickRedisClient.Thread {
 	/// <summary>
 	/// Redis client based on thread without pipeline support
 	/// TODO: reduce connections that become idle
+	/// TODO: support retry command
 	/// </summary>
 	internal class ThreadRedisClient : IRedisClient {
 		private RedisClientConfiguration _configuration;
-		private List<ThreadRedisClientConnection> _connections;
+		private HashSet<ThreadRedisClientConnection> _connections;
+		private ThreadRedisClientConnection _freeConnections;
 		private object _connectionsLock;
 		private int _minConnections;
 		private int _maxConnections;
@@ -26,7 +28,7 @@ namespace QuickRedisClient.Thread {
 
 		public ThreadRedisClient(RedisClientConfiguration configuration) {
 			_configuration = configuration;
-			_connections = new List<ThreadRedisClientConnection>();
+			_connections = new HashSet<ThreadRedisClientConnection>();
 			_connectionsLock = new object();
 			_minConnections = Math.Max(configuration.MinConnection, 1);
 			_maxConnections = Math.Max(configuration.MaxConnection, configuration.MinConnection);
@@ -38,7 +40,35 @@ namespace QuickRedisClient.Thread {
 			SpawnMinConnections();
 		}
 
-		private ThreadRedisClientConnection SpawnOneConnection() {
+		public void Dispose() {
+			lock (_connectionsLock) {
+				foreach (var connection in _connections) {
+					connection.Dispose();
+				}
+				_connections.Clear();
+				_freeConnections = null;
+			}
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void PushFreeConnection_NonThreadSafe(ThreadRedisClientConnection connection) {
+			connection._nextFree = _freeConnections;
+			_freeConnections = connection;
+			if (connection._nextFree == null) {
+				// notify other thread there new free connection
+				Monitor.Pulse(_connectionsLock);
+			}
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private ThreadRedisClientConnection PopFreeConnection_NonThreadSafe() {
+			var connection = _freeConnections;
+			_freeConnections = connection?._nextFree;
+			return connection;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private ThreadRedisClientConnection SpawnOneConnection_NonThreadSafe(bool pushFree) {
 			if (_connections.Count >= _maxConnections) {
 				return null;
 			}
@@ -47,86 +77,92 @@ namespace QuickRedisClient.Thread {
 				ref _lastUsedRemoteEPIndex) % _remoteEPs.Count;
 			var connection = new ThreadRedisClientConnection(
 				this, connectionId, _remoteEPs[remoteEPIndex], _configuration);
-			lock (_connectionsLock) {
-				if (_connections.Count >= _maxConnections) {
-					connection.Dispose();
-					return null;
-				}
-				_connections.Add(connection);
+			_connections.Add(connection);
+			if (pushFree) {
+				PushFreeConnection_NonThreadSafe(connection);
 			}
 			return connection;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private void SpawnMinConnections() {
-			for (int from = _connections.Count, to = _minConnections; from < to; ++from) {
-				SpawnOneConnection();
-			}
-		}
-
-		internal void ReportConnectionDisposed(ThreadRedisClientConnection connection) {
 			lock (_connectionsLock) {
-				if (_connections.Remove(connection)) {
-					DebugLogger.Log("conection {0} removed", connection.ConnectionId);
+				for (int from = _connections.Count, to = _minConnections; from < to; ++from) {
+					SpawnOneConnection_NonThreadSafe(pushFree: true);
 				}
 			}
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal ThreadRedisClientConnection AcquireLockedConnection() {
-			ThreadRedisClientConnection connection = null;
-			var retryTimes = 0;
-			var noMoreRetry = false;
-			while (true) {
-				lock (_connectionsLock) {
-					if (_connections.Count > 0) {
-						var index = Interlocked.Increment(
-							ref _lastUsedConnectionIndex) % _connections.Count;
-						connection = _connections[index];
+		private void RemoveOneConnection_NonThreadSafe(ThreadRedisClientConnection connection) {
+			_connections.Remove(connection);
+			if (connection == _freeConnections) {
+				_freeConnections = connection._nextFree;
+			} else {
+				var free = _freeConnections;
+				while (free != null) {
+					if (free._nextFree == connection) {
+						free._nextFree = connection._nextFree;
+						break;
 					}
-					noMoreRetry = retryTimes > _connections.Count;
+					free = free._nextFree;
 				}
-				if (connection.TryAcquireClientLock()) {
-					return connection;
-				}
-				++retryTimes;
-				if (noMoreRetry) {
-					var newConnection = SpawnOneConnection();
-					if (newConnection == null) {
-						// already spawn maximum connections
-						DebugLogger.Log(
-							"force redis client {0} acquire lock", connection.ConnectionId);
-						connection.AcquireClientLock();
+			}
+			DebugLogger.Log("conection {0} removed", connection.ConnectionId);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal ThreadRedisClientConnection AcquireConnection() {
+			lock (_connectionsLock) {
+				while (true) {
+					// grab free connection
+					var connection = PopFreeConnection_NonThreadSafe();
+					if (connection != null) {
 						return connection;
-					} else if (newConnection.TryAcquireClientLock()) {
-						return newConnection;
 					}
+					// no free connection, try create one
+					connection = SpawnOneConnection_NonThreadSafe(pushFree: false);
+					if (connection != null) {
+						return connection;
+					}
+					// failed, just wait for new free connection
+					Monitor.Wait(_connectionsLock);
 				}
 			}
 		}
 
-		public void Dispose() {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal void ReleaseConnection(ThreadRedisClientConnection connection) {
 			lock (_connectionsLock) {
-				while (_connections.Count > 0) {
-					_connections[_connections.Count - 1].Dispose();
-				}
+				// add connection to free list
+				PushFreeConnection_NonThreadSafe(connection);
+			}
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void ReleaseErrorConnection(
+			ThreadRedisClientConnection connection, Exception ex) {
+			lock (_connectionsLock) {
+				DebugLogger.Log("redis connection {0} error: {1}",
+					connection.ConnectionId, ex.ToString());
+				RemoveOneConnection_NonThreadSafe(connection);
 			}
 		}
 
 		public void Set(RedisObject key, RedisObject value) {
 			var keyBytes = (byte[])key;
 			var valueBytes = (byte[])value;
-			var connection = AcquireLockedConnection();
+			var connection = AcquireConnection();
 			try {
 				connection.EnsureConnected();
 				ThreadSetMessage.Send(connection._client,
 					connection._sendbuf, keyBytes, valueBytes);
 				ThreadGetMessage.Recv(connection._client,
 					connection._recvbuf, ref connection._recvBufStart, ref connection._recvBufEnd);
+				ReleaseConnection(connection);
 			} catch (Exception ex) {
-				connection.OnError(ex);
+				ReleaseErrorConnection(connection, ex);
 				throw;
-			} finally {
-				connection.ReleaseClientLock();
 			}
 		}
 
@@ -136,18 +172,18 @@ namespace QuickRedisClient.Thread {
 
 		public RedisObject Get(RedisObject key) {
 			var keyBytes = (byte[])key;
-			var connection = AcquireLockedConnection();
+			var connection = AcquireConnection();
 			try {
 				connection.EnsureConnected();
 				ThreadGetMessage.Send(connection._client,
 					connection._sendbuf, keyBytes);
-				return ThreadGetMessage.Recv(connection._client,
+				var result = ThreadGetMessage.Recv(connection._client,
 					connection._recvbuf, ref connection._recvBufStart, ref connection._recvBufEnd);
+				ReleaseConnection(connection);
+				return result;
 			} catch (Exception ex) {
-				connection.OnError(ex);
+				ReleaseErrorConnection(connection, ex);
 				throw;
-			} finally {
-				connection.ReleaseClientLock();
 			}
 		}
 
@@ -157,18 +193,18 @@ namespace QuickRedisClient.Thread {
 
 		public bool Del(RedisObject key) {
 			var keyBytes = (byte[])key;
-			var connection = AcquireLockedConnection();
+			var connection = AcquireConnection();
 			try {
 				connection.EnsureConnected();
 				ThreadDelMessage.Send(connection._client,
 					connection._sendbuf, keyBytes);
-				return ThreadDelMessage.Recv(connection._client,
+				var result = ThreadDelMessage.Recv(connection._client,
 					connection._recvbuf, ref connection._recvBufStart, ref connection._recvBufEnd);
+				ReleaseConnection(connection);
+				return result;
 			} catch (Exception ex) {
-				connection.OnError(ex);
+				ReleaseErrorConnection(connection, ex);
 				throw;
-			} finally {
-				connection.ReleaseClientLock();
 			}
 		}
 
@@ -181,18 +217,18 @@ namespace QuickRedisClient.Thread {
 				// avoid "ERR wrong number of arguments for 'del' command"
 				return 0;
 			}
-			var connection = AcquireLockedConnection();
+			var connection = AcquireConnection();
 			try {
 				connection.EnsureConnected();
 				ThreadDelManyMessage.Send(connection._client,
 					connection._sendbuf, keys);
-				return ThreadDelManyMessage.Recv(connection._client,
+				var result = ThreadDelManyMessage.Recv(connection._client,
 					connection._recvbuf, ref connection._recvBufStart, ref connection._recvBufEnd);
+				ReleaseConnection(connection);
+				return result;
 			} catch (Exception ex) {
-				connection.OnError(ex);
+				ReleaseErrorConnection(connection, ex);
 				throw;
-			} finally {
-				connection.ReleaseClientLock();
 			}
 		}
 

@@ -6,12 +6,14 @@ namespace QuickRedisClient.Benchmark {
 	class Program {
 		static void Main(string[] args) {
 			var factory = new ThreadRedisClientFactory();
-			var client = factory.Create(new RedisClientConfiguration());
-			for (var x = 0; x < 100; ++x) {
-				client.Set("abc", "xxx");
-				Console.WriteLine((string)client.Get("abc"));
+			using (var client = factory.Create(new RedisClientConfiguration())) {
+				for (var x = 0; x < 100; ++x) {
+					client.Set("abc", "xxx");
+					Console.WriteLine((string)client.Get("abc"));
+				}
+				client.DelMany(new RedisObject[] { });
 			}
-			client.DelMany(new RedisObject[] { });
+			Console.ReadLine();
 		}
 	}
 }

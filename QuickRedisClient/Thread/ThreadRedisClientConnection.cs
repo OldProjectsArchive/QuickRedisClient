@@ -3,7 +3,6 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace QuickRedisClient.Thread {
 	/// <summary>
@@ -22,7 +21,7 @@ namespace QuickRedisClient.Thread {
 		internal int _recvBufStart;
 		internal int _recvBufEnd;
 		internal Socket _client;
-		private object _clientLock;
+		internal ThreadRedisClientConnection _nextFree;
 
 		public ThreadRedisClientConnection(
 			ThreadRedisClient redisClient, int connectionId, EndPoint remoteEP,
@@ -36,29 +35,13 @@ namespace QuickRedisClient.Thread {
 			_recvBufStart = 0;
 			_recvBufEnd = 0;
 			_client = null;
-			_clientLock = new object();
+			_nextFree = null;
 			DebugLogger.Log("redis connection {0} started", _connectionId);
 		}
 
 		public void Dispose() {
-			_redisClient.ReportConnectionDisposed(this);
 			_client?.Dispose();
 			_client = null;
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal void AcquireClientLock() {
-			Monitor.Enter(_clientLock);
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal bool TryAcquireClientLock() {
-			return Monitor.TryEnter(_clientLock);
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal void ReleaseClientLock() {
-			Monitor.Exit(_clientLock);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,12 +55,6 @@ namespace QuickRedisClient.Thread {
 				_client = client;
 				DebugLogger.Log("redis connection {0} connected", _connectionId);
 			}
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal void OnError(Exception ex) {
-			DebugLogger.Log("redis connection {0} error: {1}", _connectionId, ex.ToString());
-			Dispose();
 		}
 	}
 }
