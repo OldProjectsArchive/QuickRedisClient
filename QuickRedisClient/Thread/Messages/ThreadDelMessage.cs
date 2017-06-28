@@ -9,7 +9,7 @@ namespace QuickRedisClient.Thread.Messages {
 	/// </summary>
 	internal static class ThreadDelMessage {
 		private readonly static byte[] MessageHeader =
-			ObjectCache.AsciiEncoding.GetBytes("*3\r\n$3\r\nDEL\r\n");
+			ObjectCache.AsciiEncoding.GetBytes("*2\r\n$3\r\nDEL\r\n");
 
 		public static void Send(Socket client, byte[] sendbuf, byte[] key) {
 			int len = 0;
@@ -27,8 +27,8 @@ namespace QuickRedisClient.Thread.Messages {
 
 		public static bool Recv(Socket client, byte[] recvbuf, ref int start, ref int end) {
 			var result = BlockingBufferReader.ReadRESP(client, recvbuf, ref start, ref end);
-			if (result is int) {
-				return (int)result > 0;
+			if (result is long) {
+				return (long)result > 0;
 			} else if (result is Exception) {
 				throw (Exception)result;
 			} else {

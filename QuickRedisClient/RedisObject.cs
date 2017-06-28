@@ -66,7 +66,7 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Determine this redis object has value or not
 		/// </summary>
-		public bool HasValue => _bytes == null;
+		public bool HasValue => _bytes != null;
 
 		/// <summary>
 		/// Convert redis object to long

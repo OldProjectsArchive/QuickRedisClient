@@ -8,8 +8,8 @@ namespace QuickRedisClient.Thread {
 		/// <summary>
 		/// Create redis client
 		/// </summary>
-		public IRedisClient Create() {
-			throw new NotImplementedException();
+		public IRedisClient Create(RedisClientConfiguration configuration) {
+			return new ThreadRedisClient(configuration);
 		}
 	}
 }

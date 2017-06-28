@@ -37,10 +37,10 @@ namespace QuickRedisClient {
 		/// <summary>
 		/// Removes the specified keys
 		/// </summary>
-		long DelMany(IEnumerable<RedisObject> key);
+		long DelMany(IList<RedisObject> keys);
 		/// <summary>
 		/// Removes the specified keys
 		/// </summary>
-		Task<long> DelManyAsync(IEnumerable<RedisObject> key);
+		Task<long> DelManyAsync(IList<RedisObject> keys);
 	}
 }

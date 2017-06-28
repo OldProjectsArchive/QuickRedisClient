@@ -9,7 +9,7 @@ namespace QuickRedisClient.Thread.Messages {
 	/// </summary>
 	internal static class ThreadGetMessage {
 		private readonly static byte[] MessageHeader =
-			ObjectCache.AsciiEncoding.GetBytes("*3\r\n$3\r\nSET\r\n");
+			ObjectCache.AsciiEncoding.GetBytes("*2\r\n$3\r\nGET\r\n");
 
 		public static void Send(Socket client, byte[] sendbuf, byte[] key) {
 			int len = 0;
@@ -27,6 +27,9 @@ namespace QuickRedisClient.Thread.Messages {
 
 		public static byte[] Recv(Socket client, byte[] recvbuf, ref int start, ref int end) {
 			var result = BlockingBufferReader.ReadRESP(client, recvbuf, ref start, ref end);
+			if (result == null) {
+				return null; // no value found
+			}
 			var byteResult = result as byte[];
 			if (byteResult != null) {
 				return byteResult;

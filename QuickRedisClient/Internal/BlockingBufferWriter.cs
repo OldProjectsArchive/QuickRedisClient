@@ -49,6 +49,17 @@ namespace QuickRedisClient.Internal {
 		}
 
 		/// <summary>
+		/// Write array header to buffer, without contents
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void WriteArrayHeaderOnly(byte[] buf, ref int start, int arrayLength) {
+			buf[start++] = (byte)'*';
+			WriteRawLong(buf, ref start, arrayLength);
+			buf[start++] = (byte)'\r';
+			buf[start++] = (byte)'\n';
+		}
+
+		/// <summary>
 		/// Write raw long to buffer
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

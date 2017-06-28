@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 
 namespace QuickRedisClient.Internal {
@@ -52,6 +53,19 @@ namespace QuickRedisClient.Internal {
 				result = -result;
 			}
 			return result;
+		}
+
+		/// <summary>
+		/// Convert string to end point, eg "127.0.0.1:6379" => IPEndPoint
+		/// </summary>
+		/// <param name="address"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static EndPoint StringToEndPoint(string address) {
+			var index = address.LastIndexOf(':');
+			var ip = IPAddress.Parse(address.Substring(0, index));
+			var port = ushort.Parse(address.Substring(index + 1));
+			return new IPEndPoint(ip, port);
 		}
 
 		/// <summary>

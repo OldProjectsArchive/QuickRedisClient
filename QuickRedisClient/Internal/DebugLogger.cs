@@ -7,11 +7,11 @@ namespace QuickRedisClient.Internal {
 	/// </summary>
 	internal static class DebugLogger {
 #if RELEASE
-		public const bool EnableDebugLog = false;
-		public const bool EnableContentsDebugLog = false;
+		public static bool EnableDebugLog = false;
+		public static bool EnableContentsDebugLog = false;
 #else
-		public const bool EnableDebugLog = true;
-		public const bool EnableContentsDebugLog = true;
+		public static bool EnableDebugLog = true;
+		public static bool EnableContentsDebugLog = true;
 #endif
 
 #if RELEASE
@@ -21,7 +21,9 @@ namespace QuickRedisClient.Internal {
 #else
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Log(string message) {
-			Console.WriteLine(message);
+			if (EnableDebugLog) {
+				Console.WriteLine(message);
+			}
 		}
 #endif
 
@@ -32,7 +34,9 @@ namespace QuickRedisClient.Internal {
 #else
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Log(string message, int arg0) {
-			Console.WriteLine(string.Format(message, arg0));
+			if (EnableDebugLog) {
+				Console.WriteLine(string.Format(message, arg0));
+			}
 		}
 #endif
 
@@ -43,7 +47,9 @@ namespace QuickRedisClient.Internal {
 #else
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Log(string message, params object[] args) {
-			Console.WriteLine(string.Format(message, args));
+			if (EnableDebugLog) {
+				Console.WriteLine(string.Format(message, args));
+			}
 		}
 #endif
 
@@ -54,7 +60,7 @@ namespace QuickRedisClient.Internal {
 #else
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void LogSendContents(byte[] buf, int start, int len) {
-			if (EnableContentsDebugLog) {
+			if (EnableDebugLog && EnableContentsDebugLog) {
 				var str = ObjectConverter.BytesToDebugString(buf, start, len);
 				Console.WriteLine($"redis client send: {str}");
 			}
@@ -68,7 +74,7 @@ namespace QuickRedisClient.Internal {
 #else
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void LogRecvContents(byte[] buf, int start, int len) {
-			if (EnableContentsDebugLog) {
+			if (EnableDebugLog && EnableContentsDebugLog) {
 				var str = ObjectConverter.BytesToDebugString(buf, start, len);
 				Console.WriteLine($"redis client recv: {str}");
 			}

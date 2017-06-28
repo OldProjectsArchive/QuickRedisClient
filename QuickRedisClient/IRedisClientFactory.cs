@@ -6,6 +6,6 @@
 		/// <summary>
 		/// Create redis client
 		/// </summary>
-		IRedisClient Create();
+		IRedisClient Create(RedisClientConfiguration configuration);
 	}
 }

@@ -152,7 +152,7 @@ namespace QuickRedisClient.Internal {
 		/// <summary>
 		/// Read RESP object
 		/// For
-		/// - simple string, return byte[]
+		/// - simple string, return byte[] or null
 		/// - error, return Exception
 		/// - integer, return long
 		/// - bulk string, return byte[]
@@ -179,7 +179,9 @@ namespace QuickRedisClient.Internal {
 			} else if (type == '$') {
 				// bulk string, return byte[]
 				var length = ReadUntilCRLF(client, buf, ref start, ref end).ToLong();
-				if (length > MaxAllowedBulkStringLength) {
+				if (length < 0) {
+					return null;
+				} else if (length > MaxAllowedBulkStringLength) {
 					throw new RedisClientException($"Redis client error: bulk string too long, length is '{length}'");
 				}
 				result = ReadUntilLength(client, buf, ref start, ref end, (int)length).ToBytes();

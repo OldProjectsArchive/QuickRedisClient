@@ -8,7 +8,7 @@ namespace QuickRedisClient.ThreadPipeline {
 		/// <summary>
 		/// Create redis client
 		/// </summary>
-		public IRedisClient Create() {
+		public IRedisClient Create(RedisClientConfiguration configuration) {
 			throw new NotImplementedException();
 		}
 	}

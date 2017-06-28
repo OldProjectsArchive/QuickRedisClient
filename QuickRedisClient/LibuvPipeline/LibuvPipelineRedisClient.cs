@@ -31,11 +31,11 @@ namespace QuickRedisClient.LibuvPipeline {
 			throw new NotImplementedException();
 		}
 
-		public long DelMany(IEnumerable<RedisObject> key) {
+		public long DelMany(IList<RedisObject> keys) {
 			throw new NotImplementedException();
 		}
 
-		public Task<long> DelManyAsync(IEnumerable<RedisObject> key) {
+		public Task<long> DelManyAsync(IList<RedisObject> keys) {
 			throw new NotImplementedException();
 		}
 

@@ -7,9 +7,10 @@
 
 	<ItemGroup>
 		<Compile Include="../QuickRedisClient/*.cs"></Compile>
-		<Compile Include="../QuickRedisClient/Internal/*.cs"></Compile>
-		<Compile Include="../QuickRedisClient/LibuvPipeline/*.cs"></Compile>
-		<Compile Include="../QuickRedisClient/ThreadPipeline/*.cs"></Compile>
+		<Compile Include="../QuickRedisClient/Internal/**/*.cs"></Compile>
+		<Compile Include="../QuickRedisClient/LibuvPipeline/**/*.cs"></Compile>
+		<Compile Include="../QuickRedisClient/Thread/**/*.cs"></Compile>
+		<Compile Include="../QuickRedisClient/ThreadPipeline/**/*.cs"></Compile>
 	</ItemGroup>
 
 	<ItemGroup>
