@@ -5,6 +5,6 @@ namespace QuickRedisClient.Internal {
 	/// Inline options
 	/// </summary>
 	internal static class InlineOptimization {
-		public const MethodImplOptions InlineOption = MethodImplOptions.NoInlining;
+		public const MethodImplOptions InlineOption = MethodImplOptions.AggressiveInlining;
 	}
 }
