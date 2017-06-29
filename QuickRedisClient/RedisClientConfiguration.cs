@@ -30,6 +30,10 @@ namespace QuickRedisClient {
 		/// Use tcp nodelay option
 		/// </summary>
 		public bool UseTcpNoDelay { get; set; }
+		/// <summary>
+		/// Extra configuration
+		/// </summary>
+		public IDictionary<string, object> Extra { get; set; }
 
 		/// <summary>
 		/// Initialize
@@ -47,6 +51,7 @@ namespace QuickRedisClient {
 			SendBufferCapacity = 1024;
 			RecvBufferCapacity = 1024;
 			UseTcpNoDelay = false;
+			Extra = new Dictionary<string, object>();
 		}
 	}
 }

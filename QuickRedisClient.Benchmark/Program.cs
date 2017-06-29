@@ -24,6 +24,7 @@ namespace QuickRedisClient.Benchmark {
 						Console.WriteLine($"wrong value: {key}, {value}");
 					}
 				});
+				// System.Threading.Thread.Sleep(13000);
 			}
 			Console.WriteLine("success");
 		}

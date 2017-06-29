@@ -11,24 +11,29 @@ using System.Threading.Tasks;
 namespace QuickRedisClient.Thread {
 	/// <summary>
 	/// Redis client based on thread without pipeline support
-	/// TODO: reduce connections that become idle
 	/// TODO: support retry command
 	/// </summary>
 	internal class ThreadRedisClient : IRedisClient {
+		private const string RemoveIdleConnectionsIntervalKey = "RemoveIdleConnectionsInterval";
+		private const int RemoveIdleConnectionsIntervalDefault = 5000;
 		private RedisClientConfiguration _configuration;
 		private ThreadRedisClientConnection _connections;
 		private int _connectionsFreeCount;
+		private int _connectionsMinFreeCount;
 		private int _connectionsTotalCount;
 		private int _minConnections;
 		private int _maxConnections;
 		private int _lastConnectionId;
 		private List<EndPoint> _remoteEPs;
 		private int _lastUsedRemoteEPIndex;
+		private int _removeIdleConnectionsInterval;
+		private Timer _removeIdleConnectionsTimer;
 
 		public ThreadRedisClient(RedisClientConfiguration configuration) {
 			_configuration = configuration;
 			_connections = null;
 			_connectionsFreeCount = 0;
+			_connectionsMinFreeCount = 0;
 			_connectionsTotalCount = 0;
 			_minConnections = Math.Max(configuration.MinConnection, 1);
 			_maxConnections = Math.Max(configuration.MaxConnection, configuration.MinConnection);
@@ -36,18 +41,42 @@ namespace QuickRedisClient.Thread {
 			_remoteEPs = configuration.ServerAddresses
 				.Select(a => ObjectConverter.StringToEndPoint(a)).ToList();
 			_lastUsedRemoteEPIndex = 0;
+			if (configuration.Extra.ContainsKey(RemoveIdleConnectionsIntervalKey)) {
+				_removeIdleConnectionsInterval = int.Parse(
+					configuration.Extra[RemoveIdleConnectionsIntervalKey].ToString());
+			} else {
+				_removeIdleConnectionsInterval = RemoveIdleConnectionsIntervalDefault;
+			}
+			_removeIdleConnectionsTimer = new Timer(
+				RemoveIdleConnections_Timer, null, 0, _removeIdleConnectionsInterval);
 			SpawnMinConnections_LockFree();
 		}
 
 		public void Dispose() {
-			var connection = _connections;
-			_connections = null;
-			while (connection != null) {
-				connection.Dispose();
-				connection = connection._next;
+			_removeIdleConnectionsTimer.Dispose();
+			while (true) {
+				var connection = RemoveOneConnection_LockFree();
+				if (connection == null) {
+					break;
+				}
 			}
 			_connectionsFreeCount = 0;
 			_connectionsTotalCount = 0;
+		}
+
+		private void RemoveIdleConnections_Timer(object state) {
+			// find out how many connections idle in this period
+			var idleConnections = _connectionsMinFreeCount - _minConnections;
+			if (idleConnections > 0) {
+				DebugLogger.Log("remove {0} idle connections", idleConnections);
+				for (var x = 0; x < idleConnections; ++x) {
+					RemoveOneConnection_LockFree();
+				}
+			} else {
+				DebugLogger.Log("no idle connections found");
+			}
+			// reset min free count
+			_connectionsMinFreeCount = _connectionsTotalCount;
 		}
 
 		[MethodImpl(InlineOptimization.InlineOption)]
@@ -79,6 +108,7 @@ namespace QuickRedisClient.Thread {
 					if (head != null) {
 						// head._next will update at next push
 						var count = Interlocked.Decrement(ref _connectionsFreeCount);
+						_connectionsMinFreeCount = Math.Min(_connectionsMinFreeCount, count);
 						DebugLogger.Log("pop free connections: {0}", count);
 					}
 					return head;
@@ -116,6 +146,7 @@ namespace QuickRedisClient.Thread {
 		private ThreadRedisClientConnection RemoveOneConnection_LockFree() {
 			var connection = PopFreeConnection_LockFree();
 			if (connection != null) {
+				connection.Dispose();
 				Interlocked.Decrement(ref _connectionsTotalCount);
 			}
 			return connection;
